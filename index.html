@@ -1,15 +1,282 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ระบบติดตามอุณหภูมิและความชื้น - Cold Storage Box</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ColdBox - Dashboard ติดตามอุณหภูมิและความชื้น ESP32 Dual DHT22</title>
+
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- External Libraries (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Top Header Bar (No Overlap Layout) -->
+    <header class="header-bar">
+      <div class="header-title-group">
+        <div class="icon-box">
+          <i class="fa-solid fa-snowflake"></i>
+        </div>
+        <div class="header-text">
+          <h1>ColdBox</h1>
+          <p>ระบบติดตาม ESP32</p>
+        </div>
+      </div>
+
+      <div class="header-right-group">
+        <button class="btn-refresh-top" id="btnRefresh" title="รีเฟรชข้อมูลเรียลไทม์">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <div class="connection-badge" id="statusBadge">
+          <span class="pulse-dot"></span>
+          <span id="statusText">เรียลไทม์</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="main-content">
+
+      <!-- ESP32 Hardware Status Banner -->
+      <div class="hardware-banner">
+        <div class="hardware-info">
+          <div class="hardware-icon">
+            <i class="fa-solid fa-microchip"></i>
+          </div>
+          <div class="hardware-details">
+            <h2>ESP32 Dual Sensor Node</h2>
+            <p id="lastUpdateText">อัปเดตล่าสุด: กำลังเชื่อมต่อ...</p>
+          </div>
+        </div>
+        <div class="pin-badge">
+          <i class="fa-solid fa-bolt"></i> GPIO 4 & 16
+        </div>
+      </div>
+
+      <!-- Section Title: Live Box Cards -->
+      <div class="section-heading">
+        <i class="fa-solid fa-boxes-stacked"></i> สถิติเรียลไทม์รายกล่อง
+      </div>
+
+      <!-- Main Box Cards Grid (กล่องที่ 1 vs กล่องที่ 2) -->
+      <div class="box-cards-grid">
+
+        <!-- Card กล่องที่ 1 (DHT22 #1 - GPIO 4) -->
+        <div class="card box-card box-card-1">
+          <div class="box-card-header">
+            <div class="box-title-wrap">
+              <span class="box-badge-number badge-b1">1</span>
+              <div>
+                <h3>กล่องที่ 1 (DHT22 #1)</h3>
+                <span class="box-location"><i class="fa-solid fa-box-archive"></i> ภายในกล่องเก็บความเย็น</span>
+              </div>
+            </div>
+            <span class="pin-chip chip-b1">GPIO 4</span>
+          </div>
+
+          <div class="sensor-readings-grid">
+            <!-- Temp Reading -->
+            <div class="reading-box temp-bg">
+              <div class="reading-label"><i class="fa-solid fa-temperature-high color-temp"></i> อุณหภูมิ</div>
+              <div class="reading-value color-temp"><span id="dht1Temp">--.-</span> <span class="unit">°C</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ (2.0 - 30.0 °C)</div>
+            </div>
+
+            <!-- Humi Reading -->
+            <div class="reading-box humi-bg">
+              <div class="reading-label"><i class="fa-solid fa-droplet color-humi"></i> ความชื้น</div>
+              <div class="reading-value color-humi"><span id="dht1Humi">--</span> <span class="unit">%RH</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ (50 - 70 %RH)</div>
+            </div>
+          </div>
+
+          <div class="card-footer-info">
+            <i class="fa-solid fa-circle-info"></i> เซนเซอร์ตัวหลักประจำกล่องเก็บความเย็น A
+          </div>
+        </div>
+
+        <!-- Card กล่องที่ 2 (DHT22 #2 - GPIO 16) -->
+        <div class="card box-card box-card-2">
+          <div class="box-card-header">
+            <div class="box-title-wrap">
+              <span class="box-badge-number badge-b2">2</span>
+              <div>
+                <h3>กล่องที่ 2 (DHT22 #2)</h3>
+                <span class="box-location"><i class="fa-solid fa-cubes"></i> ภายในกล่องโฟม</span>
+              </div>
+            </div>
+            <span class="pin-chip chip-b2">GPIO 16</span>
+          </div>
+
+          <div class="sensor-readings-grid">
+            <!-- Temp Reading -->
+            <div class="reading-box temp-bg">
+              <div class="reading-label"><i class="fa-solid fa-temperature-high color-temp"></i> อุณหภูมิ</div>
+              <div class="reading-value color-temp"><span id="dht2Temp">--.-</span> <span class="unit">°C</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ (2.0 - 30.0 °C)</div>
+            </div>
+
+            <!-- Humi Reading -->
+            <div class="reading-box humi-bg">
+              <div class="reading-label"><i class="fa-solid fa-droplet color-humi"></i> ความชื้น</div>
+              <div class="reading-value color-humi"><span id="dht2Humi">--</span> <span class="unit">%RH</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ (50 - 70 %RH)</div>
+            </div>
+          </div>
+
+          <div class="card-footer-info">
+            <i class="fa-solid fa-circle-info"></i> เซนเซอร์ประจำกล่องโฟม B
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Section Title: Separate Charts per Box -->
+      <div class="section-heading">
+        <i class="fa-solid fa-chart-line"></i> กราฟแนวโน้มแยกตามกล่อง
+      </div>
+
+      <!-- Navigation Tabs for Switching Charts (Compact & Clean) -->
+      <div class="chart-tab-switch">
+        <button class="chart-tab-btn active" id="tabBtnBox1" onclick="switchChartTab('box1')">
+          <span class="tab-dot dot-b1"></span> 📦 กล่อง 1 (GPIO 4)
+        </button>
+        <button class="chart-tab-btn" id="tabBtnBox2" onclick="switchChartTab('box2')">
+          <span class="tab-dot dot-b2"></span> 📦 กล่อง 2 (GPIO 16)
+        </button>
+        <button class="chart-tab-btn" id="tabBtnCompare" onclick="switchChartTab('compare')">
+          <span class="tab-dot dot-compare"></span> 📊 เปรียบเทียบ 2 กล่อง
+        </button>
+      </div>
+
+      <!-- Chart Card 1: Box #1 Dedicated Chart -->
+      <div class="chart-card" id="chartCardBox1">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <span class="badge-b1-mini">กล่องที่ 1</span>
+            <span>กราฟอุณหภูมิและความชื้น (GPIO 4)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartBox1"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart Card 2: Box #2 Dedicated Chart -->
+      <div class="chart-card hidden-chart" id="chartCardBox2">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <span class="badge-b2-mini">กล่องที่ 2</span>
+            <span>กราฟอุณหภูมิและความชื้น (GPIO 16)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartBox2"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart Card 3: Comparison Chart (Temp & Humi comparison for both boxes) -->
+      <div class="chart-card hidden-chart" id="chartCardCompare">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <span class="badge-compare-mini">เปรียบเทียบ</span>
+            <span>กราฟเปรียบเทียบ (กล่องที่ 1 vs กล่องที่ 2)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartCompare"></canvas>
+        </div>
+      </div>
+
+      <!-- Summary Stats Grid -->
+      <div class="stats-summary-grid">
+        <div class="stat-card">
+          <div class="stat-icon b1-icon"><i class="fa-solid fa-box"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">กล่อง 1 (GPIO 4)</span>
+            <div class="stat-value color-b1" id="statB1Val">--.- °C</div>
+            <span class="stat-sub" id="statB1Humi">-- %RH</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon b2-icon"><i class="fa-solid fa-cubes"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">กล่อง 2 (GPIO 16)</span>
+            <div class="stat-value color-b2" id="statB2Val">--.- °C</div>
+            <span class="stat-sub" id="statB2Humi">-- %RH</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon diff-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">ผลต่างอุณหภูมิ</span>
+            <div class="stat-value color-diff" id="statDiffVal">--.- °C</div>
+            <span class="stat-sub">Δ Temp (|#1 - #2|)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Logs Table Card with Export Controls -->
+      <div class="table-card">
+        <div class="table-header-flex">
+          <span class="table-title"><i class="fa-solid fa-clock-rotate-left"></i> ประวัติบันทึกล่าสุดรายกล่อง (Supabase DB)</span>
+          
+          <!-- Export Action Buttons -->
+          <div class="export-btn-group">
+            <button class="btn-export-csv" id="btnExportCSV" title="ส่งออกเป็นไฟล์ CSV / Excel">
+              <i class="fa-solid fa-file-excel"></i> <span>ส่งออก CSV</span>
+            </button>
+            <button class="btn-export-pdf" id="btnExportPDF" title="พิมพ์รายงานสรุป PDF">
+              <i class="fa-solid fa-file-pdf"></i> <span>พิมพ์ PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>เวลา</th>
+                <th>📦 กล่องที่ 1 (GPIO 4)</th>
+                <th>📦 กล่องที่ 2 (GPIO 16)</th>
+                <th>ผลต่าง (°C)</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <tr>
+                <td colspan="4" style="text-align:center; color: var(--text-muted);">กำลังดึงข้อมูล...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <footer class="footer">
+        Supabase Project Ref: <strong>vxzbgfrdrzdsifmqnvdl</strong><br />
+        ColdBox Monitoring Engine &bull; Dual DHT22 Sensors System
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- Custom App Logic Script -->
+  <script src="app.js"></script>
+</body>
 </html>
