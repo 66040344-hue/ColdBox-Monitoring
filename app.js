@@ -17,9 +17,11 @@ const supabaseClient = window.supabase.createClient(DEFAULT_URL, DEFAULT_ANON_KE
 // State store & Chart Instances
 let chartBox1 = null;
 let chartBox2 = null;
+let chartRoom = null;
 let chartCompare = null;
 let localLogs = [];
 let currentActiveTab = 'box1';
+let currentLogLimit = '30'; // Options: '30', '100', '500', 'all'
 
 // -------------------------------------------------------------
 // 2. CHART INITIALIZATION (Separate Charts per Box)
@@ -28,7 +30,7 @@ let currentActiveTab = 'box1';
 // Helper for Common Single Box Chart Config
 function createBoxChart(ctxId, tempColor, humiColor, labelPrefix) {
   const ctx = document.getElementById(ctxId).getContext('2d');
-  
+
   // Create Gradients
   const gradTemp = ctx.createLinearGradient(0, 0, 0, 200);
   gradTemp.addColorStop(0, tempColor.replace('1)', '0.25)'));
@@ -107,6 +109,9 @@ function initCharts() {
 
   // 2. Chart for Box #2 (DHT22 #2 - GPIO 16) -> Sapphire Blue Accent
   chartBox2 = createBoxChart('chartBox2', 'rgba(59, 130, 246, 1)', 'rgba(239, 68, 68, 1)', 'กล่องที่ 2 (GPIO 16)');
+
+  // 2.5 Chart for Room (DHT11 - GPIO 5) -> Amber Accent
+  chartRoom = createBoxChart('chartRoom', 'rgba(245, 158, 11, 1)', 'rgba(217, 119, 6, 1)', 'ห้อง (GPIO 5)');
 
   // 3. Comparison Chart (Box #1 vs Box #2 Temperatures AND Humidities)
   const ctxCompare = document.getElementById('chartCompare').getContext('2d');
@@ -201,16 +206,19 @@ function switchChartTab(tabName) {
   // Update Button Active States
   document.getElementById('tabBtnBox1').classList.toggle('active', tabName === 'box1');
   document.getElementById('tabBtnBox2').classList.toggle('active', tabName === 'box2');
+  document.getElementById('tabBtnRoom').classList.toggle('active', tabName === 'room');
   document.getElementById('tabBtnCompare').classList.toggle('active', tabName === 'compare');
 
   // Toggle Visibility of Chart Cards
   document.getElementById('chartCardBox1').classList.toggle('hidden-chart', tabName !== 'box1');
   document.getElementById('chartCardBox2').classList.toggle('hidden-chart', tabName !== 'box2');
+  document.getElementById('chartCardRoom').classList.toggle('hidden-chart', tabName !== 'room');
   document.getElementById('chartCardCompare').classList.toggle('hidden-chart', tabName !== 'compare');
 
   // Trigger chart resize/update for smooth rendering
   if (tabName === 'box1' && chartBox1) chartBox1.update();
   if (tabName === 'box2' && chartBox2) chartBox2.update();
+  if (tabName === 'room' && chartRoom) chartRoom.update();
   if (tabName === 'compare' && chartCompare) chartCompare.update();
 }
 
@@ -224,20 +232,22 @@ function updateUI(logs) {
   if (!logs || logs.length === 0) return;
 
   const latest = logs[0];
-  const timeStr = new Date(latest.recorded_at).toLocaleTimeString('th-TH', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit' 
+  const timeStr = new Date(latest.recorded_at).toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
 
   // Update Last Sync Header Time
-  document.getElementById('lastUpdateText').innerText = `อัปเดตล่าสุด: ${timeStr} น.`;
+  document.getElementById('lastUpdateText').innerText = `อัปเดตล่าสุด: ${timeStr} น. (${logs.length} รายการ)`;
 
-  // Parse Sensor 1 (GPIO 4) & Sensor 2 (GPIO 16) Values
+  // Parse Sensor 1 (GPIO 4) & Sensor 2 (GPIO 16) Values & Room (GPIO 5)
   const t1 = parseFloat(latest.temp_1);
   const h1 = parseFloat(latest.humi_1);
   const t2 = parseFloat(latest.temp_2 !== null && latest.temp_2 !== undefined ? latest.temp_2 : latest.temp_1);
   const h2 = parseFloat(latest.humi_2 !== null && latest.humi_2 !== undefined ? latest.humi_2 : latest.humi_1);
+  const tRoom = parseFloat(latest.temp_room !== null && latest.temp_room !== undefined ? latest.temp_room : 0.0);
+  const hRoom = parseFloat(latest.humi_room !== null && latest.humi_room !== undefined ? latest.humi_room : 0.0);
 
   // Update Card #1 (DHT22 #1 - GPIO 4)
   document.getElementById('dht1Temp').innerText = t1.toFixed(1);
@@ -246,6 +256,10 @@ function updateUI(logs) {
   // Update Card #2 (DHT22 #2 - GPIO 16)
   document.getElementById('dht2Temp').innerText = t2.toFixed(1);
   document.getElementById('dht2Humi').innerText = h2.toFixed(0);
+
+  // Update Room Card (DHT11 - GPIO 5)
+  document.getElementById('dhtRoomTemp').innerText = tRoom.toFixed(1);
+  document.getElementById('dhtRoomHumi').innerText = hRoom.toFixed(0);
 
   // Calculate Temperature Difference (Δ Temp)
   const diffTemp = Math.abs(t1 - t2).toFixed(1);
@@ -257,16 +271,21 @@ function updateUI(logs) {
   document.getElementById('statB2Val').innerText = `${t2.toFixed(1)} °C`;
   document.getElementById('statB2Humi').innerText = `${h2.toFixed(0)} %RH`;
 
+  document.getElementById('statRoomVal').innerText = `${tRoom.toFixed(1)} °C`;
+  document.getElementById('statRoomHumi').innerText = `${hRoom.toFixed(0)} %RH`;
+
   document.getElementById('statDiffVal').innerText = `${diffTemp} °C`;
 
-  // Update Telemetry Logs Table (Top 10 Recent Records)
+  // Update Telemetry Logs Table
   const tableBody = document.getElementById('logsTableBody');
-  tableBody.innerHTML = logs.slice(0, 10).map(r => {
-    const time = new Date(r.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  tableBody.innerHTML = logs.map(r => {
+    const time = new Date(r.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const s1T = parseFloat(r.temp_1).toFixed(1);
     const s1H = parseFloat(r.humi_1).toFixed(0);
     const s2T = parseFloat(r.temp_2 !== null ? r.temp_2 : r.temp_1).toFixed(1);
     const s2H = parseFloat(r.humi_2 !== null ? r.humi_2 : r.humi_1).toFixed(0);
+    const sRoomT = parseFloat(r.temp_room !== null ? r.temp_room : 0.0).toFixed(1);
+    const sRoomH = parseFloat(r.humi_room !== null ? r.humi_room : 0.0).toFixed(0);
     const diff = Math.abs(parseFloat(s1T) - parseFloat(s2T)).toFixed(1);
 
     return `
@@ -274,20 +293,24 @@ function updateUI(logs) {
         <td><strong>${time}</strong></td>
         <td><span style="color:#10B981; font-weight:700;">${s1T}°C</span> / <span style="color:#2563EB;">${s1H}%</span></td>
         <td><span style="color:#3B82F6; font-weight:700;">${s2T}°C</span> / <span style="color:#2563EB;">${s2H}%</span></td>
+        <td><span style="color:#D97706; font-weight:700;">${sRoomT}°C</span> / <span style="color:#D97706;">${sRoomH}%</span></td>
         <td><strong style="color:#8B5CF6;">${diff} °C</strong></td>
       </tr>
     `;
   }).join('');
 
-  // Prepare Chronological Series for Charts
-  const chronolog = [...logs].reverse().slice(-15);
+  // Prepare Chronological Series for Charts (Max 20 data points for smooth line rendering)
+  const chronolog = [...logs].reverse().slice(-20);
   const labels = chronolog.map(l => new Date(l.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
-  
+
   const temp1Series = chronolog.map(l => parseFloat(l.temp_1));
   const humi1Series = chronolog.map(l => parseFloat(l.humi_1));
-  
+
   const temp2Series = chronolog.map(l => parseFloat(l.temp_2 !== null ? l.temp_2 : l.temp_1));
   const humi2Series = chronolog.map(l => parseFloat(l.humi_2 !== null ? l.humi_2 : l.humi_1));
+
+  const tempRoomSeries = chronolog.map(l => parseFloat(l.temp_room !== null ? l.temp_room : 0.0));
+  const humiRoomSeries = chronolog.map(l => parseFloat(l.humi_room !== null ? l.humi_room : 0.0));
 
   // 1. Update Box #1 Chart
   if (chartBox1) {
@@ -303,6 +326,14 @@ function updateUI(logs) {
     chartBox2.data.datasets[0].data = temp2Series;
     chartBox2.data.datasets[1].data = humi2Series;
     chartBox2.update();
+  }
+
+  // 2.5 Update Room Chart
+  if (chartRoom) {
+    chartRoom.data.labels = labels;
+    chartRoom.data.datasets[0].data = tempRoomSeries;
+    chartRoom.data.datasets[1].data = humiRoomSeries;
+    chartRoom.update();
   }
 
   // 3. Update Comparison Chart (Both Temp & Humi)
@@ -329,14 +360,15 @@ function exportTelemetryCSV() {
 
   // UTF-8 BOM for Excel Thai language support
   let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-  
+
   // Title Metadata
   csvContent += "รายงานข้อมูลการบันทึกอุณหภูมิและความชื้น ESP32 ColdBox (Dual DHT22)\n";
   csvContent += `วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')}\n`;
+  csvContent += `จำนวนรายการส่งออก: ${localLogs.length} รายการ\n`;
   csvContent += `รหัสอุปกรณ์: box-1 (Project Ref: vxzbgfrdrzdsifmqnvdl)\n\n`;
 
   // Column Headers
-  csvContent += "ลำดับ,วันที่-เวลา,อุณหภูมิ กล่องที่ 1 (°C),ความชื้น กล่องที่ 1 (%RH),อุณหภูมิ กล่องที่ 2 (°C),ความชื้น กล่องที่ 2 (%RH),ผลต่างอุณหภูมิ (°C),สถานะ\n";
+  csvContent += "ลำดับ,วันที่-เวลา,อุณหภูมิ กล่องที่ 1 (°C),ความชื้น กล่องที่ 1 (%RH),อุณหภูมิ กล่องที่ 2 (°C),ความชื้น กล่องที่ 2 (%RH),อุณหภูมิห้อง (°C),ความชื้นห้อง (%RH),ผลต่างอุณหภูมิ (°C),สถานะ\n";
 
   // Data Rows
   localLogs.forEach((row, index) => {
@@ -345,17 +377,19 @@ function exportTelemetryCSV() {
     const h1 = parseFloat(row.humi_1).toFixed(0);
     const t2 = parseFloat(row.temp_2 !== null ? row.temp_2 : row.temp_1).toFixed(1);
     const h2 = parseFloat(row.humi_2 !== null ? row.humi_2 : row.humi_1).toFixed(0);
+    const tr = parseFloat(row.temp_room !== null ? row.temp_room : 0.0).toFixed(1);
+    const hr = parseFloat(row.humi_room !== null ? row.humi_room : 0.0).toFixed(0);
     const diff = Math.abs(parseFloat(t1) - parseFloat(t2)).toFixed(1);
     const isAlert = parseFloat(t1) > 30 || parseFloat(t2) > 30;
     const status = isAlert ? "แจ้งเตือนอุณหภูมิสูง" : "ปกติ";
 
-    csvContent += `${index + 1},${dateTime},${t1},${h1},${t2},${h2},${diff},${status}\n`;
+    csvContent += `${index + 1},${dateTime},${t1},${h1},${t2},${h2},${tr},${hr},${diff},${status}\n`;
   });
 
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `ColdBox_Telemetry_${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute("download", `ColdBox_Telemetry_All_${new Date().toISOString().split('T')[0]}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -393,7 +427,7 @@ function exportTelemetryPDF() {
         <h1>📦 รายงานสรุปการบันทึกอุณหภูมิและความชื้น ColdBox ESP32</h1>
         <div class="meta-info">
           <div>ระบบ: <strong>ColdBox Dual DHT22 Monitoring System</strong> (Supabase Ref: vxzbgfrdrzdsifmqnvdl)</div>
-          <div>วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')}</div>
+          <div>วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')} &bull; จำนวนทั้งหมด: ${localLogs.length} รายการ</div>
         </div>
       </div>
 
@@ -402,32 +436,36 @@ function exportTelemetryPDF() {
           <tr>
             <th>#</th>
             <th>วันที่-เวลา</th>
-            <th>📦 กล่องที่ 1 (GPIO 4)</th>
-            <th>📦 กล่องที่ 2 (GPIO 16)</th>
+            <th>📦 กล่องที่ 1</th>
+            <th>📦 กล่องที่ 2</th>
+            <th>🏠 ห้อง (Room)</th>
             <th>ผลต่าง (°C)</th>
             <th>สถานะ</th>
           </tr>
         </thead>
         <tbody>
           ${localLogs.map((r, i) => {
-            const time = new Date(r.recorded_at).toLocaleString('th-TH');
-            const s1T = parseFloat(r.temp_1).toFixed(1);
-            const s1H = parseFloat(r.humi_1).toFixed(0);
-            const s2T = parseFloat(r.temp_2 !== null ? r.temp_2 : r.temp_1).toFixed(1);
-            const s2H = parseFloat(r.humi_2 !== null ? r.humi_2 : r.humi_1).toFixed(0);
-            const diff = Math.abs(parseFloat(s1T) - parseFloat(s2T)).toFixed(1);
-            const isAlert = parseFloat(s1T) > 30 || parseFloat(s2T) > 30;
-            return `
+    const time = new Date(r.recorded_at).toLocaleString('th-TH');
+    const s1T = parseFloat(r.temp_1).toFixed(1);
+    const s1H = parseFloat(r.humi_1).toFixed(0);
+    const s2T = parseFloat(r.temp_2 !== null ? r.temp_2 : r.temp_1).toFixed(1);
+    const s2H = parseFloat(r.humi_2 !== null ? r.humi_2 : r.humi_1).toFixed(0);
+    const srT = parseFloat(r.temp_room !== null ? r.temp_room : 0.0).toFixed(1);
+    const srH = parseFloat(r.humi_room !== null ? r.humi_room : 0.0).toFixed(0);
+    const diff = Math.abs(parseFloat(s1T) - parseFloat(s2T)).toFixed(1);
+    const isAlert = parseFloat(s1T) > 30 || parseFloat(s2T) > 30;
+    return `
               <tr>
                 <td>${i + 1}</td>
                 <td>${time}</td>
                 <td>${s1T} °C / ${s1H} %RH</td>
                 <td>${s2T} °C / ${s2H} %RH</td>
+                <td>${srT} °C / ${srH} %RH</td>
                 <td>${diff} °C</td>
                 <td><span class="badge ${isAlert ? 'badge-alert' : 'badge-normal'}">${isAlert ? 'แจ้งเตือน' : 'ปกติ'}</span></td>
               </tr>
             `;
-          }).join('')}
+  }).join('')}
         </tbody>
       </table>
       <script>window.print();</script>
@@ -438,21 +476,27 @@ function exportTelemetryPDF() {
 }
 
 // -------------------------------------------------------------
-// 6. SUPABASE DATA FETCHING
+// 6. SUPABASE DATA FETCHING (Supports All Historical Logs)
 // -------------------------------------------------------------
 async function fetchTelemetry() {
   const refreshBtn = document.getElementById('btnRefresh');
   if (refreshBtn) {
     refreshBtn.disabled = true;
-    refreshBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>โหลด...</span>`;
+    refreshBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
   }
 
   try {
-    const { data, error } = await supabaseClient
+    let query = supabaseClient
       .from('telemetry_logs')
       .select('*')
-      .order('recorded_at', { ascending: false })
-      .limit(30);
+      .order('recorded_at', { ascending: false });
+
+    // Apply Row Limit filter
+    if (currentLogLimit && currentLogLimit !== 'all') {
+      query = query.limit(parseInt(currentLogLimit));
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -461,7 +505,7 @@ async function fetchTelemetry() {
       updateUI(localLogs);
     } else {
       document.getElementById('logsTableBody').innerHTML = `
-        <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">ยังไม่มีข้อมูลในระบบ (กรุณาเปิดบอร์ด ESP32 เพื่อส่งข้อมูล)</td></tr>
+        <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">ยังไม่มีข้อมูลในระบบ (กรุณาเปิดบอร์ด ESP32 เพื่อส่งข้อมูล)</td></tr>
       `;
     }
   } catch (err) {
@@ -469,7 +513,7 @@ async function fetchTelemetry() {
   } finally {
     if (refreshBtn) {
       refreshBtn.disabled = false;
-      refreshBtn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> <span>รีเฟรช</span>`;
+      refreshBtn.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
     }
   }
 }
@@ -496,7 +540,7 @@ function setupRealtime() {
         console.log('✅ Connected to Supabase Realtime WebSocket');
         badge.style.background = '#D1FAE5';
         badge.style.color = '#047857';
-        text.innerText = 'เชื่อมต่อเรียลไทม์';
+        text.innerText = 'เรียลไทม์';
       } else {
         badge.style.background = '#FEF3C7';
         badge.style.color = '#D97706';
@@ -517,6 +561,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('btnRefresh');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', fetchTelemetry);
+  }
+
+  // Row Limit Selector Dropdown
+  const limitSelect = document.getElementById('logLimitSelect');
+  if (limitSelect) {
+    limitSelect.addEventListener('change', (e) => {
+      currentLogLimit = e.target.value;
+      fetchTelemetry();
+    });
   }
 
   // Export Buttons

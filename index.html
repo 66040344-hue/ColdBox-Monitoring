@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -8,11 +9,13 @@
   <!-- Google Fonts: Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+    rel="stylesheet">
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  
+
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
 
@@ -20,6 +23,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
 
   <div class="app-container">
@@ -142,6 +146,40 @@
           </div>
         </div>
 
+        <!-- Card สภาพแวดล้อมห้อง (DHT11 - GPIO 5) -->
+        <div class="card box-card box-card-room">
+          <div class="box-card-header">
+            <div class="box-title-wrap">
+              <span class="box-badge-number badge-room"><i class="fa-solid fa-house"></i></span>
+              <div>
+                <h3>อุณหภูมิห้อง (DHT11)</h3>
+                <span class="box-location"><i class="fa-solid fa-wind"></i> สภาพแวดล้อมภายนอก</span>
+              </div>
+            </div>
+            <span class="pin-chip chip-room">GPIO 5</span>
+          </div>
+
+          <div class="sensor-readings-grid">
+            <!-- Temp Reading -->
+            <div class="reading-box temp-bg">
+              <div class="reading-label"><i class="fa-solid fa-temperature-high color-temp"></i> อุณหภูมิห้อง</div>
+              <div class="reading-value color-temp"><span id="dhtRoomTemp">--.-</span> <span class="unit">°C</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ</div>
+            </div>
+
+            <!-- Humi Reading -->
+            <div class="reading-box humi-bg">
+              <div class="reading-label"><i class="fa-solid fa-droplet color-humi"></i> ความชื้นห้อง</div>
+              <div class="reading-value color-humi"><span id="dhtRoomHumi">--</span> <span class="unit">%RH</span></div>
+              <div class="reading-status"><span class="status-dot dot-normal"></span> ปกติ</div>
+            </div>
+          </div>
+
+          <div class="card-footer-info">
+            <i class="fa-solid fa-circle-info"></i> เซนเซอร์วัดอุณหภูมิห้อง (Room Ambient)
+          </div>
+        </div>
+
       </div>
 
       <!-- Section Title: Separate Charts per Box -->
@@ -152,13 +190,16 @@
       <!-- Navigation Tabs for Switching Charts (Compact & Clean) -->
       <div class="chart-tab-switch">
         <button class="chart-tab-btn active" id="tabBtnBox1" onclick="switchChartTab('box1')">
-          <span class="tab-dot dot-b1"></span> 📦 กล่อง 1 (GPIO 4)
+          <span class="tab-dot dot-b1"></span> 📦 กล่อง 1
         </button>
         <button class="chart-tab-btn" id="tabBtnBox2" onclick="switchChartTab('box2')">
-          <span class="tab-dot dot-b2"></span> 📦 กล่อง 2 (GPIO 16)
+          <span class="tab-dot dot-b2"></span> 📦 กล่อง 2
+        </button>
+        <button class="chart-tab-btn" id="tabBtnRoom" onclick="switchChartTab('room')">
+          <span class="tab-dot dot-room" style="background:#F59E0B;"></span> 🏠 อุณหภูมิห้อง
         </button>
         <button class="chart-tab-btn" id="tabBtnCompare" onclick="switchChartTab('compare')">
-          <span class="tab-dot dot-compare"></span> 📊 เปรียบเทียบ 2 กล่อง
+          <span class="tab-dot dot-compare"></span> 📊 เปรียบเทียบ
         </button>
       </div>
 
@@ -188,6 +229,19 @@
         </div>
       </div>
 
+      <!-- Chart Card 3: Room Environment Dedicated Chart -->
+      <div class="chart-card hidden-chart" id="chartCardRoom">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <span class="badge-room-mini" style="background:rgba(245, 158, 11, 0.15); color:#D97706; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 10px;">ห้อง (DHT11)</span>
+            <span>กราฟอุณหภูมิและความชื้นสภาพแวดล้อม (GPIO 5)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartRoom"></canvas>
+        </div>
+      </div>
+
       <!-- Chart Card 3: Comparison Chart (Temp & Humi comparison for both boxes) -->
       <div class="chart-card hidden-chart" id="chartCardCompare">
         <div class="chart-card-header">
@@ -201,12 +255,12 @@
         </div>
       </div>
 
-      <!-- Summary Stats Grid -->
+      <!-- Summary Stats Grid (Fits perfectly inside container) -->
       <div class="stats-summary-grid">
         <div class="stat-card">
           <div class="stat-icon b1-icon"><i class="fa-solid fa-box"></i></div>
           <div class="stat-details">
-            <span class="stat-title">กล่อง 1 (GPIO 4)</span>
+            <span class="stat-title">กล่อง 1</span>
             <div class="stat-value color-b1" id="statB1Val">--.- °C</div>
             <span class="stat-sub" id="statB1Humi">-- %RH</span>
           </div>
@@ -215,35 +269,54 @@
         <div class="stat-card">
           <div class="stat-icon b2-icon"><i class="fa-solid fa-cubes"></i></div>
           <div class="stat-details">
-            <span class="stat-title">กล่อง 2 (GPIO 16)</span>
+            <span class="stat-title">กล่อง 2</span>
             <div class="stat-value color-b2" id="statB2Val">--.- °C</div>
             <span class="stat-sub" id="statB2Humi">-- %RH</span>
           </div>
         </div>
 
         <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #D97706;"><i class="fa-solid fa-house"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">อุณหภูมิห้อง</span>
+            <div class="stat-value" style="color: #D97706;" id="statRoomVal">--.- °C</div>
+            <span class="stat-sub" id="statRoomHumi">-- %RH</span>
+          </div>
+        </div>
+        
+        <div class="stat-card">
           <div class="stat-icon diff-icon"><i class="fa-solid fa-scale-balanced"></i></div>
           <div class="stat-details">
-            <span class="stat-title">ผลต่างอุณหภูมิ</span>
+            <span class="stat-title">ผลต่าง (กล่อง 1-2)</span>
             <div class="stat-value color-diff" id="statDiffVal">--.- °C</div>
-            <span class="stat-sub">Δ Temp (|#1 - #2|)</span>
+            <span class="stat-sub">Δ Temp</span>
           </div>
         </div>
       </div>
 
-      <!-- Telemetry Logs Table Card with Export Controls -->
+      <!-- Telemetry Logs Table Card with Limit Selector & Export Controls -->
       <div class="table-card">
         <div class="table-header-flex">
-          <span class="table-title"><i class="fa-solid fa-clock-rotate-left"></i> ประวัติบันทึกล่าสุดรายกล่อง (Supabase DB)</span>
-          
-          <!-- Export Action Buttons -->
-          <div class="export-btn-group">
-            <button class="btn-export-csv" id="btnExportCSV" title="ส่งออกเป็นไฟล์ CSV / Excel">
-              <i class="fa-solid fa-file-excel"></i> <span>ส่งออก CSV</span>
-            </button>
-            <button class="btn-export-pdf" id="btnExportPDF" title="พิมพ์รายงานสรุป PDF">
-              <i class="fa-solid fa-file-pdf"></i> <span>พิมพ์ PDF</span>
-            </button>
+          <span class="table-title"><i class="fa-solid fa-clock-rotate-left"></i> ประวัติบันทึกรายกล่อง</span>
+
+          <div class="table-controls-group">
+            <!-- Row Limit Selector -->
+            <select id="logLimitSelect" class="select-limit-dropdown" title="เลือกจำนวนรายการย้อนหลัง">
+              <option value="30" selected>30 รายการล่าสุด</option>
+              <option value="100">100 รายการล่าสุด</option>
+              <option value="500">500 รายการล่าสุด</option>
+              <option value="all">ดูข้อมูลย้อนหลังทั้งหมด</option>
+            </select>
+
+            <!-- Export Action Buttons -->
+            <div class="export-btn-group">
+              <button class="btn-export-csv" id="btnExportCSV" title="ส่งออกเป็นไฟล์ CSV / Excel">
+                <i class="fa-solid fa-file-excel"></i> <span>CSV</span>
+              </button>
+              <button class="btn-export-pdf" id="btnExportPDF" title="พิมพ์รายงานสรุป PDF">
+                <i class="fa-solid fa-file-pdf"></i> <span>PDF</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -252,14 +325,15 @@
             <thead>
               <tr>
                 <th>เวลา</th>
-                <th>📦 กล่องที่ 1 (GPIO 4)</th>
-                <th>📦 กล่องที่ 2 (GPIO 16)</th>
-                <th>ผลต่าง (°C)</th>
+                <th>📦 กล่อง 1</th>
+                <th>📦 กล่อง 2</th>
+                <th>🏠 อุณหภูมิห้อง</th>
+                <th>ผลต่าง (Δ)</th>
               </tr>
             </thead>
             <tbody id="logsTableBody">
               <tr>
-                <td colspan="4" style="text-align:center; color: var(--text-muted);">กำลังดึงข้อมูล...</td>
+                <td colspan="5" style="text-align:center; color: var(--text-muted);">กำลังดึงข้อมูล...</td>
               </tr>
             </tbody>
           </table>
@@ -279,4 +353,5 @@
   <!-- Custom App Logic Script -->
   <script src="app.js"></script>
 </body>
+
 </html>

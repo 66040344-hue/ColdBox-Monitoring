@@ -64,6 +64,7 @@ body {
     padding: 0;
     background: var(--bg-app);
   }
+
   .app-container {
     border-radius: 0;
     box-shadow: none;
@@ -140,7 +141,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Refresh Button on Top Header Bar */
+/* Icon Only Refresh Button */
 .btn-refresh-top {
   background: #F1F5F9;
   color: var(--text-dark);
@@ -198,10 +199,12 @@ body {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
+
   70% {
     transform: scale(1);
     box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
   }
+
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
@@ -313,6 +316,10 @@ body {
   border-left: 5px solid var(--b2-blue);
 }
 
+.box-card-room {
+  border-left: 5px solid #F59E0B; /* Amber for room */
+}
+
 .box-card-header {
   display: flex;
   justify-content: space-between;
@@ -339,8 +346,20 @@ body {
   flex-shrink: 0;
 }
 
-.badge-b1 { background: var(--b1-green); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
-.badge-b2 { background: var(--b2-blue); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
+.badge-b1 {
+  background: var(--b1-green);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.badge-b2 {
+  background: var(--b2-blue);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.badge-room {
+  background: #F59E0B;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
 
 .box-title-wrap h3 {
   font-size: 14.5px;
@@ -362,8 +381,23 @@ body {
   white-space: nowrap;
 }
 
-.chip-b1 { background: var(--b1-green-bg); color: var(--b1-green-dark); border: 1px solid #A7F3D0; }
-.chip-b2 { background: var(--b2-blue-bg); color: var(--b2-blue-dark); border: 1px solid #BFDBFE; }
+.chip-b1 {
+  background: var(--b1-green-bg);
+  color: var(--b1-green-dark);
+  border: 1px solid #A7F3D0;
+}
+
+.chip-b2 {
+  background: var(--b2-blue-bg);
+  color: var(--b2-blue-dark);
+  border: 1px solid #BFDBFE;
+}
+
+.chip-room {
+  background: rgba(245, 158, 11, 0.15);
+  color: #D97706;
+  border: 1px solid #FCD34D;
+}
 
 /* Readings Grid inside Box Card */
 .sensor-readings-grid {
@@ -380,8 +414,15 @@ body {
   background: #F8FAFC;
 }
 
-.temp-bg { background: #FEF2F2; border-color: #FEE2E2; }
-.humi-bg { background: #EFF6FF; border-color: #DBEAFE; }
+.temp-bg {
+  background: #FEF2F2;
+  border-color: #FEE2E2;
+}
+
+.humi-bg {
+  background: #EFF6FF;
+  border-color: #DBEAFE;
+}
 
 .reading-label {
   font-size: 11px;
@@ -400,8 +441,13 @@ body {
   margin-bottom: 4px;
 }
 
-.color-temp { color: var(--temp-red); }
-.color-humi { color: var(--humi-blue); }
+.color-temp {
+  color: var(--temp-red);
+}
+
+.color-humi {
+  color: var(--humi-blue);
+}
 
 .unit {
   font-size: 13px;
@@ -423,7 +469,10 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dot-normal { background: var(--b1-green); }
+
+.dot-normal {
+  background: var(--b1-green);
+}
 
 .card-footer-info {
   font-size: 10px;
@@ -482,9 +531,22 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dot-b1 { background: var(--b1-green); }
-.dot-b2 { background: var(--b2-blue); }
-.dot-compare { background: #8B5CF6; }
+
+.dot-b1 {
+  background: var(--b1-green);
+}
+
+.dot-b2 {
+  background: var(--b2-blue);
+}
+
+.dot-room {
+  background: #F59E0B;
+}
+
+.dot-compare {
+  background: #8B5CF6;
+}
 
 /* Dedicated Chart Cards */
 .chart-card {
@@ -514,9 +576,32 @@ body {
   flex-wrap: wrap;
 }
 
-.badge-b1-mini { background: var(--b1-green-bg); color: var(--b1-green-dark); font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-.badge-b2-mini { background: var(--b2-blue-bg); color: var(--b2-blue-dark); font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-.badge-compare-mini { background: #F3E8FF; color: #7E22CE; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.badge-b1-mini {
+  background: var(--b1-green-bg);
+  color: var(--b1-green-dark);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.badge-b2-mini {
+  background: var(--b2-blue-bg);
+  color: var(--b2-blue-dark);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.badge-compare-mini {
+  background: #F3E8FF;
+  color: #7E22CE;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
 
 .chart-container {
   position: relative;
@@ -524,55 +609,100 @@ body {
   width: 100%;
 }
 
-/* Stats Summary Cards Grid */
+/* Stats Summary Cards Grid (Never Overflows Parent Border) */
 .stats-summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
 }
 
 .stat-card {
   background: #FFFFFF;
-  padding: 10px 8px;
+  padding: 8px 6px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   gap: 6px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .stat-icon {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
 }
 
-.b1-icon { background: var(--b1-green-bg); color: var(--b1-green); }
-.b2-icon { background: var(--b2-blue-bg); color: var(--b2-blue); }
-.diff-icon { background: #F3E8FF; color: #8B5CF6; }
+.b1-icon {
+  background: var(--b1-green-bg);
+  color: var(--b1-green);
+}
+
+.b2-icon {
+  background: var(--b2-blue-bg);
+  color: var(--b2-blue);
+}
+
+.diff-icon {
+  background: #F3E8FF;
+  color: #8B5CF6;
+}
 
 .stat-details {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
-.stat-title { font-size: 9px; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stat-value { font-size: 13.5px; font-weight: 800; line-height: 1.1; margin: 2px 0; white-space: nowrap; }
+.stat-title {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.color-b1 { color: var(--b1-green); }
-.color-b2 { color: var(--b2-blue); }
-.color-diff { color: #8B5CF6; }
+.stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.stat-sub { font-size: 8.5px; color: var(--text-light); white-space: nowrap; }
+.color-b1 {
+  color: var(--b1-green);
+}
 
-/* Telemetry Logs Table Card with Export Controls */
+.color-b2 {
+  color: var(--b2-blue);
+}
+
+.color-diff {
+  color: #8B5CF6;
+}
+
+.stat-sub {
+  font-size: 8.5px;
+  color: var(--text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Telemetry Logs Table Card with Limit Selector & Export Controls */
 .table-card {
   background: #FFFFFF;
   border-radius: var(--radius-lg);
@@ -599,16 +729,42 @@ body {
   gap: 6px;
 }
 
+.table-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.select-limit-dropdown {
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-limit-dropdown:focus,
+.select-limit-dropdown:hover {
+  border-color: var(--primary-blue);
+  background: #FFFFFF;
+}
+
 .export-btn-group {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .btn-export-csv {
   background: #10B981;
   color: white;
   border: none;
-  padding: 5px 10px;
+  padding: 5px 9px;
   border-radius: 8px;
   font-size: 10.5px;
   font-weight: 600;
@@ -630,7 +786,7 @@ body {
   background: #3B82F6;
   color: white;
   border: none;
-  padding: 5px 10px;
+  padding: 5px 9px;
   border-radius: 8px;
   font-size: 10.5px;
   font-weight: 600;
@@ -650,6 +806,7 @@ body {
 
 .table-responsive {
   overflow-x: auto;
+  max-height: 380px;
 }
 
 table {
@@ -665,6 +822,9 @@ th {
   padding: 8px 10px;
   font-weight: 600;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 td {
@@ -674,7 +834,9 @@ td {
   white-space: nowrap;
 }
 
-tr:last-child td { border-bottom: none; }
+tr:last-child td {
+  border-bottom: none;
+}
 
 /* Footer */
 .footer {
